@@ -1,6 +1,6 @@
 // Service worker do NerdChat: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nerdchat-v1';
+const CACHE = 'nerdchat-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -20,4 +20,13 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res; })));
+});
+
+// toque num aviso: abre/foca o app
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./');
+  }));
 });
