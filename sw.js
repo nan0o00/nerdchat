@@ -1,6 +1,6 @@
 // Service worker do NerdChat: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nerdchat-v2';
+const CACHE = 'nerdchat-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -28,5 +28,17 @@ self.addEventListener('notificationclick', (e) => {
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) { if ('focus' in c) return c.focus(); }
     return self.clients.openWindow('./');
+  }));
+});
+
+// aviso que chega do servidor (funciona com o app fechado)
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: 'NerdChat', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    if (list.some((c) => c.visibilityState === 'visible' && c.focused)) return undefined; // app aberto na frente: o aviso aparece dentro do app
+    return self.registration.showNotification(d.title || 'NerdChat', {
+      body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: d.url || './' },
+    });
   }));
 });
