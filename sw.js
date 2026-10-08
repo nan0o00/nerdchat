@@ -1,6 +1,6 @@
 // Service worker do NerdChat: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nerdchat-v3';
+const CACHE = 'nerdchat-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
