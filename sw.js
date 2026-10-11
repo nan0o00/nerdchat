@@ -49,7 +49,9 @@ const avatarOf = (uid) => {
   if (!uid || typeof caches === 'undefined' || typeof caches.open !== 'function') return Promise.resolve(null);
   return Promise.resolve().then(() => caches.open('nexo-avatars').then((c) => c.match('./__avatars.json')).then((r) => (r ? r.json() : {})).then((map) => {
     const u = map && map[uid];
-    return typeof u === 'string' && /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//.test(u) ? u : null;
+    if (typeof u !== 'string') return null;
+    if (/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 60000) return u; // bolinha com a inicial gerada pelo próprio app
+    return /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//.test(u) ? u : null;
   })).catch(() => null);
 };
 
