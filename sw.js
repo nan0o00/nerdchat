@@ -1,6 +1,6 @@
 // Service worker do NEXO: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nexo-v1'; // (avisos v2: abre a conversa certa)
+const CACHE = 'nexo-v1'; // (avisos v3: foto vinda do servidor)
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -82,7 +82,9 @@ self.addEventListener('push', (e) => {
     const title = String(d.title || '').trim().slice(0, 60) || 'NEXO';
     const url = urlFromTag(d.tag) || safeUrl(d.url);
     const m = /^msg-(.+)$/.exec(d.tag || ''); const uid = m && UUID.test(m[1]) ? m[1].toLowerCase() : null;
-    return avatarOf(uid).then((icon) => self.registration.showNotification(title, {
+    // foto vinda do servidor (aviso com o app fechado) tem prioridade; senão a que o app já guardou neste celular
+    const srv = typeof d.icon === 'string' && /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/photos\/[^\s"'<>]{1,300}$/.test(d.icon) ? d.icon : null;
+    return (srv ? Promise.resolve(srv) : avatarOf(uid)).then((icon) => self.registration.showNotification(title, {
       body: cleanBody(d.body), tag: d.tag || undefined, renotify: !!d.tag, icon: icon || 'icon-192.png', badge: 'badge-96.png', data: { url },
       timestamp: Date.now(), vibrate: [60, 40, 60],
       ...(uid ? { actions: [{ action: 'reply', title: 'Responder' }, { action: 'camera', title: '📷 Câmera' }] } : {}),
