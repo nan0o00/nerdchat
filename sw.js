@@ -46,11 +46,11 @@ const cleanBody = (b) => {
 
 // foto pública de quem mandou (o app guarda a lista no cache "nexo-avatars"); só endereços https do Supabase do projeto
 const avatarOf = (uid) => {
-  if (!uid || typeof caches === 'undefined') return Promise.resolve(null);
-  return caches.open('nexo-avatars').then((c) => c.match('./__avatars.json')).then((r) => (r ? r.json() : {})).then((map) => {
+  if (!uid || typeof caches === 'undefined' || typeof caches.open !== 'function') return Promise.resolve(null);
+  return Promise.resolve().then(() => caches.open('nexo-avatars').then((c) => c.match('./__avatars.json')).then((r) => (r ? r.json() : {})).then((map) => {
     const u = map && map[uid];
     return typeof u === 'string' && /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//.test(u) ? u : null;
-  }).catch(() => null);
+  })).catch(() => null);
 };
 
 // toque num aviso: abre a conversa certa (ou só o app)
