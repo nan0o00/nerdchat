@@ -1,6 +1,6 @@
 // Service worker do NEXO: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nexo-v1'; // (avisos v5: ?room= das menções)
+const CACHE = 'nexo-v1'; // (avisos v6: ?room= das menções e salas da galera)
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (e) => {
 
 // ---- avisos ----
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ROOM_RX = /^(anime|games|rpg|rock|cosplay|geral)$/;
+const ROOM_RX = /^(anime|games|rpg|rock|cosplay|geral|c[0-9a-f]{7})$/;
 // endereço seguro: só o próprio app, com no máximo ?chat=<id válido> ou ?room=<sala conhecida>
 const safeUrl = (u) => {
   try {
