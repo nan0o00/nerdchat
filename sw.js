@@ -1,6 +1,6 @@
 // Service worker do NEXO: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nexo-v1'; // (avisos v4: sem botão Câmera)
+const CACHE = 'nexo-v1'; // (avisos v5: ?room= das menções)
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -24,17 +24,20 @@ self.addEventListener('fetch', (e) => {
 
 // ---- avisos ----
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// endereço seguro: só o próprio app, com no máximo ?chat=<id válido>
+const ROOM_RX = /^(anime|games|rpg|rock|cosplay|geral)$/;
+// endereço seguro: só o próprio app, com no máximo ?chat=<id válido> ou ?room=<sala conhecida>
 const safeUrl = (u) => {
   try {
     const url = new URL(u || './', self.registration.scope);
     if (url.origin !== self.location.origin) return './';
     const c = url.searchParams.get('chat');
+    const r = url.searchParams.get('room');
+    if (!c && r && ROOM_RX.test(r)) return './?room=' + r;
     return c && UUID.test(c) ? './?chat=' + c.toLowerCase() + (url.searchParams.get('cam') === '1' ? '&cam=1' : '') : './';
   } catch (_) { return './'; }
 };
 // aviso de mensagem do servidor: etiqueta "msg-<id do remetente>" (ou "match-<id>") aponta a conversa
-const urlFromTag = (tag) => { const m = /^(?:msg|match)-(.+)$/.exec(tag || ''); return m && UUID.test(m[1]) ? './?chat=' + m[1].toLowerCase() : null; };
+const urlFromTag = (tag) => { const rm = /^room-(.+)$/.exec(tag || ''); if (rm && ROOM_RX.test(rm[1])) return './?room=' + rm[1]; const m = /^(?:msg|match)-(.+)$/.exec(tag || ''); return m && UUID.test(m[1]) ? './?chat=' + m[1].toLowerCase() : null; };
 // texto do aviso: tira a linha de citação de respostas ("↩ Nome: “trecho”") e corta com segurança
 const cleanBody = (b) => {
   let t = String(b || '');
@@ -61,12 +64,14 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   let url = safeUrl(e.notification.data && e.notification.data.url);
   const chat = new URL(url, self.registration.scope).searchParams.get('chat');
+  const roomId = new URL(url, self.registration.scope).searchParams.get('room');
   const cam = e.action === 'camera' && !!chat; // (avisos antigos ainda podem ter o botão "Câmera"; o botão não é mais criado)
   if (chat) url = './?chat=' + chat + (cam ? '&cam=1' : '');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) {
       if ('focus' in c) {
         if (chat) c.postMessage({ type: 'nexo-open-chat', uid: chat, cam });
+        else if (roomId && ROOM_RX.test(roomId)) c.postMessage({ type: 'nexo-open-room', room: roomId });
         return c.focus();
       }
     }
