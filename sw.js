@@ -7,7 +7,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== 'nexo-avatars').map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -30,7 +30,7 @@ const safeUrl = (u) => {
     const url = new URL(u || './', self.registration.scope);
     if (url.origin !== self.location.origin) return './';
     const c = url.searchParams.get('chat');
-    return c && UUID.test(c) ? './?chat=' + c.toLowerCase() : './';
+    return c && UUID.test(c) ? './?chat=' + c.toLowerCase() + (url.searchParams.get('cam') === '1' ? '&cam=1' : '') : './';
   } catch (_) { return './'; }
 };
 // aviso de mensagem do servidor: etiqueta "msg-<id do remetente>" (ou "match-<id>") aponta a conversa
@@ -44,15 +44,26 @@ const cleanBody = (b) => {
   const a = Array.from(t); return a.length > 120 ? a.slice(0, 119).join('') + '…' : t;
 };
 
+// foto pública de quem mandou (o app guarda a lista no cache "nexo-avatars"); só endereços https do Supabase do projeto
+const avatarOf = (uid) => {
+  if (!uid || typeof caches === 'undefined') return Promise.resolve(null);
+  return caches.open('nexo-avatars').then((c) => c.match('./__avatars.json')).then((r) => (r ? r.json() : {})).then((map) => {
+    const u = map && map[uid];
+    return typeof u === 'string' && /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//.test(u) ? u : null;
+  }).catch(() => null);
+};
+
 // toque num aviso: abre a conversa certa (ou só o app)
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const url = safeUrl(e.notification.data && e.notification.data.url);
+  let url = safeUrl(e.notification.data && e.notification.data.url);
   const chat = new URL(url, self.registration.scope).searchParams.get('chat');
+  const cam = e.action === 'camera' && !!chat; // botão "Câmera" do aviso: abre a conversa já com a câmera
+  if (chat) url = './?chat=' + chat + (cam ? '&cam=1' : '');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) {
       if ('focus' in c) {
-        if (chat) c.postMessage({ type: 'nexo-open-chat', uid: chat });
+        if (chat) c.postMessage({ type: 'nexo-open-chat', uid: chat, cam });
         return c.focus();
       }
     }
@@ -68,8 +79,11 @@ self.addEventListener('push', (e) => {
     if (list.some((c) => c.visibilityState === 'visible' && c.focused)) return undefined; // app aberto na frente: o aviso aparece dentro do app
     const title = String(d.title || '').trim().slice(0, 60) || 'NEXO';
     const url = urlFromTag(d.tag) || safeUrl(d.url);
-    return self.registration.showNotification(title, {
-      body: cleanBody(d.body), tag: d.tag || undefined, renotify: !!d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: { url },
-    });
+    const m = /^msg-(.+)$/.exec(d.tag || ''); const uid = m && UUID.test(m[1]) ? m[1].toLowerCase() : null;
+    return avatarOf(uid).then((icon) => self.registration.showNotification(title, {
+      body: cleanBody(d.body), tag: d.tag || undefined, renotify: !!d.tag, icon: icon || 'icon-192.png', badge: 'badge-96.png', data: { url },
+      timestamp: Date.now(), vibrate: [60, 40, 60],
+      ...(uid ? { actions: [{ action: 'reply', title: 'Responder' }, { action: 'camera', title: '📷 Câmera' }] } : {}),
+    }));
   }));
 });
