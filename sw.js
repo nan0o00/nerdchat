@@ -1,6 +1,6 @@
 // Service worker do NEXO: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nexo-v1'; // (avisos v3: foto vinda do servidor)
+const CACHE = 'nexo-v1'; // (avisos v4: sem botão Câmera)
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -60,7 +60,7 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   let url = safeUrl(e.notification.data && e.notification.data.url);
   const chat = new URL(url, self.registration.scope).searchParams.get('chat');
-  const cam = e.action === 'camera' && !!chat; // botão "Câmera" do aviso: abre a conversa já com a câmera
+  const cam = e.action === 'camera' && !!chat; // (avisos antigos ainda podem ter o botão "Câmera"; o botão não é mais criado)
   if (chat) url = './?chat=' + chat + (cam ? '&cam=1' : '');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) {
@@ -87,7 +87,7 @@ self.addEventListener('push', (e) => {
     return (srv ? Promise.resolve(srv) : avatarOf(uid)).then((icon) => self.registration.showNotification(title, {
       body: cleanBody(d.body), tag: d.tag || undefined, renotify: !!d.tag, icon: icon || 'icon-192.png', badge: 'badge-96.png', data: { url },
       timestamp: Date.now(), vibrate: [60, 40, 60],
-      ...(uid ? { actions: [{ action: 'reply', title: 'Responder' }, { action: 'camera', title: '📷 Câmera' }] } : {}),
+      ...(uid ? { actions: [{ action: 'reply', title: 'Responder' }] } : {}),
     }));
   }));
 });
