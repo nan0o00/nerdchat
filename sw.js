@@ -38,6 +38,7 @@ const urlFromTag = (tag) => { const m = /^(?:msg|match)-(.+)$/.exec(tag || ''); 
 // texto do aviso: tira a linha de citação de respostas ("↩ Nome: “trecho”") e corta com segurança
 const cleanBody = (b) => {
   let t = String(b || '');
+  if (t.startsWith('↪ Encaminhada\n')) t = '↪ ' + t.slice('↪ Encaminhada\n'.length);
   if (t.startsWith('↩ ')) { const i = t.indexOf('\n'); t = i >= 0 ? '↩ ' + t.slice(i + 1) : 'Respondeu a uma mensagem'; }
   t = t.replace(/\s+/g, ' ').trim();
   if (t === 'Foto') t = '📷 Foto'; else if (t === 'Mensagem de voz') t = '🎤 Mensagem de voz';
