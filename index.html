@@ -1280,14 +1280,16 @@ main>.perfil{animation:none}.perfil>*{animation:fadeUp .28s ease both}
 .cam-send{width:56px;height:56px;margin-left:auto;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;cursor:pointer;flex:none}
 .cam-bottom .cam-pill+.cam-send{margin-left:auto}
 .nx-cam button:focus-visible{outline:2px solid #fff;outline-offset:2px}
-.once-chip{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;border-radius:18px;border:1px solid var(--rx-line,var(--line));background:var(--rx,var(--card2));color:var(--text);font:inherit;text-align:left;min-width:170px;cursor:pointer}
-.once-chip>span:last-child{display:flex;flex-direction:column;line-height:1.25}
-.once-chip b{font-size:14.5px}.once-chip small{font-size:12px;color:var(--muted)}
-.once-chip .once-ic{color:var(--accent);width:28px;height:28px}
-.once-chip.mine{background:var(--me,var(--accent));color:#fff;border-color:transparent;cursor:default}
-.once-chip.mine small{color:rgba(255,255,255,.78)}.once-chip.mine .once-ic{color:#fff}
-.once-chip.done{opacity:.7;cursor:default}.once-chip.done .once-ic{color:var(--muted)}
-.chat.dm .bubble:has(>.once-chip){background:none!important;padding:0;border:0!important}
+/* visualização única: o próprio balão (com a cor normal de enviada/recebida) envolve ícone + texto + horário, sem caixa extra */
+.once-chip{display:flex;align-items:center;gap:10px;min-width:0;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.once-chip>span:last-child{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.once-chip b{font-size:15px;font-weight:600}.once-chip small{font-size:12px;opacity:.72;white-space:nowrap}
+.once-chip .once-ic{width:26px;height:26px;color:var(--accent)}
+.once-chip.mine{cursor:default}.once-chip.mine .once-ic{color:currentColor}
+.once-chip.done{cursor:default;opacity:.75}.once-chip.done .once-ic{color:var(--muted)}
+.once-chip:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
+.chat.dm .bubble:has(>.once-chip){display:flex;flex-wrap:nowrap;align-items:flex-end;column-gap:12px;padding:8px 12px 7px 10px}
+.chat.dm .bubble:has(>.once-chip)>.meta{margin:0;padding:0 0 1px;flex:none}
 .once-view{background:#000!important}
 .once-view img{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;pointer-events:none}
 .once-note{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:50%;transform:translateX(-50%);font-size:13px;color:rgba(255,255,255,.8);background:rgba(0,0,0,.5);padding:6px 12px;border-radius:999px;white-space:nowrap}
