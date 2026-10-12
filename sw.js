@@ -1,6 +1,6 @@
 // Service worker do NEXO: guarda o "casco" do app para abrir rápido e funcionar sem rede.
 // Nunca guarda chamadas ao servidor (Supabase) nem dados de conversa.
-const CACHE = 'nexo-v1'; // (avisos v6: ?room= das menções e salas da galera)
+const CACHE = 'nexo-v1'; // (avisos v6: ?room= das menções e salas da galera; v7 Etapa 35)
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
